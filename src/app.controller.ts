@@ -1,84 +1,53 @@
-import { Controller, Get, Post, Put,Delete,Param,Body} from '@nestjs/common';
-import { AppService } from './app.service';
+import { Controller, Get, Post, Put,Delete,Param,Body, ParseUUIDPipe, ParseEnumPipe} from '@nestjs/common';
 import { Console } from 'console';
 import{PrevoznoSredstvoTip, TipPutovanja, data}from 'src/data'
 import{v4 as uuid }from"uuid"
+import { AppService } from './app.service';
+import { createPutovanjeDto, updatePutovanjeDto } from './dtos/report.dto';
 
 @Controller('putovanje/:type')
 export class AppController
 {
+  constructor(    
+    private readonly appService:AppService    )
+  {}
+
   @Get()
-  getPutovanja(@Param('type')type:string)
+  getPutovanja(@Param('type', new ParseEnumPipe(TipPutovanja))type:string)
   {
     console.log(type);
     const putovanjeTip=type==="Rekreacija"?TipPutovanja.REKREACIJA:TipPutovanja.POSLOVNO
-    return data.putovanje.filter((putovanje)=>putovanje.type===putovanjeTip)
+    return this.appService.getPutovanja(putovanjeTip);   
   }
 
   @Get(':mesto')
-  getPutovanjaPoMestu(@Param('type')type:string,
+  getPutovanjaPoMestu(@Param('type', new ParseEnumPipe(TipPutovanja))type:TipPutovanja,
                       @Param('mesto')mesto:string )
   {
     const putovanjeTip=type==="Rekreacija"?TipPutovanja.REKREACIJA:TipPutovanja.POSLOVNO
-    return data.putovanje.filter((putovanje)=>putovanje.type===putovanjeTip) 
-    .find((putovanje)=>putovanje.mesto===mesto);
+    return this.appService.getPutovanjaPoMestu(mesto,type);
    }
    
   @Post()
   createPutovanje( @Body(){type,mesto,brojDana,cena,
-    prevoznoSredstvo}:{ 
-
-    type:string;
-    mesto:string;
-    brojDana:number;
-    cena:number;
-    prevoznoSredstvo:PrevoznoSredstvoTip})
-  {
-    const novoPutovanje={
-      id:uuid(),
-      type:type==='Rekreacija'?TipPutovanja.REKREACIJA:TipPutovanja.POSLOVNO,
-      mesto,
-      brojDana,
-      cena,
-      datumPolaska:new Date(),
-      datumPovratka:new Date(),
-      prevoznoSredstvo
-    }
-    data.putovanje.push(novoPutovanje);
+    prevoznoSredstvo}:createPutovanjeDto)
+    {
+      return this.appService.createPutovanje({type,mesto,brojDana,cena,
+        prevoznoSredstvo});
     
-    return novoPutovanje;
   }
 
   @Put(':id')
-  updatePutovanje(@Param('id')id:string,
-  @Body()body:{ 
-    type:TipPutovanja;
-    mesto:string;
-    brojDana:number;
-    cena:number;
-    prevoznoSredstvo:PrevoznoSredstvoTip})
+  updatePutovanje(@Param('id',ParseUUIDPipe)id:string,
+  @Body()body:updatePutovanjeDto)
   {
-    const putovanjeZaUpdate = data.putovanje.find((putovanje)=>putovanje.id===id);
-    if(!putovanjeZaUpdate)
-      return "Putovanje sa datim ID ne postoji!";
-    const putovanjeIndex = data.putovanje.findIndex((putovanje)=>putovanje.id===putovanjeZaUpdate.id);
-    data.putovanje[putovanjeIndex]=
-    {
-      ...data.putovanje[putovanjeIndex],
-      ...body
-    }
-
-    return data.putovanje[putovanjeIndex];
+   return this.appService.updatePutovanje(id,body);
   }
 
   @Delete(':id')
-  deletePutovanje(@Param('id') id:string)
+  deletePutovanje(@Param('id',ParseUUIDPipe) id:string)
   {
-    const indexBrisanja = data.putovanje.findIndex((putovanje)=>putovanje.id===id);
-    if(indexBrisanja===-1)
-       return "Putovanje sa zadatim indexom nije pronadjeno";
-    data.putovanje.splice(indexBrisanja,1);  
-    return "Brisanje je uspesno!";
+      return this.appService.deletePutovanje(id);
   }
 
 }
