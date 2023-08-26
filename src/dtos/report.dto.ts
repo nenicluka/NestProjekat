@@ -2,6 +2,7 @@
 import { TipPutovanja } from "src/data";
 import { PrevoznoSredstvoTip } from "src/data";
 import { IsNumber, IsPositive, IsString,IsNotEmpty,IsOptional } from "class-validator";
+import{Exclude,Expose} from "class-transformer"
 
 export class createPutovanjeDto{
 
@@ -41,4 +42,16 @@ export class updatePutovanjeDto{
     @IsString()
     @IsNotEmpty()
     prevoznoSredstvo:PrevoznoSredstvoTip
+}
+
+export class PutovanjeResponse
+{
+    id:string;
+    type:TipPutovanja;
+    mesto:string;
+    brojDana:Number;
+    cena:number;
+    datumPolaska:Date;
+    datumPovratka:Date;
+    prevoznoSredstvo:PrevoznoSredstvoTip;
 }
